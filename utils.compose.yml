@@ -1,0 +1,56 @@
+---
+services:
+  db:
+    image: docker.io/library/postgres:16-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      start_period: 3s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+
+  objectstorage:
+    image: quay.io/minio/minio
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-If", "http://localhost:9000/minio/health/live"]
+      start_period: 3s
+      interval: 30s
+      retries: 5
+      timeout: 5s
+    command:
+      - server
+      - /data
+      - --console-address
+      - ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_USER:-}
+      MINIO_ROOT_PASSWORD: ${MINIO_PASS:-}
+    volumes:
+      - objectstorage:/data
+
+  objectstorage-create-buckets:
+    depends_on:
+      objectstorage:
+        condition: service_healthy
+    image: quay.io/minio/mc
+    entrypoint: ["/bin/bash", "/docker-entrypoint.sh"]
+    volumes:
+      - ./objectstorage-entrypoint.sh:/docker-entrypoint.sh:ro
+      - ./objectstorage-init:/docker-entrypoint-init.d:ro
+    environment:
+      MC_HOST: http://objectstorage:9000
+      MC_ACCESS_KEY: ${MINIO_USER:-minioadmin}
+      MC_SECRET_KEY: ${MINIO_PASS:-minioadmin}
+
+volumes:
+  db:
+  objectstorage:

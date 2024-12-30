@@ -1,0 +1,49 @@
+---
+services:
+  ak-redis:
+    image: docker.io/library/redis:alpine
+    command: --save 60 1 --loglevel warning
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep PONG"]
+      start_period: 20s
+      interval: 30s
+      retries: 5
+      timeout: 3s
+    volumes:
+      - ak-redis:/data
+
+  ak-server:
+    image: ghcr.io/goauthentik/server:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      ak-redis:
+        condition: service_healthy
+    command: server
+    environment:
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY:-verynotsecretkey}
+      AUTHENTIK_REDIS__HOST: ak-redis
+      AUTHENTIK_POSTGRESQL__HOST: db
+      AUTHENTIK_POSTGRESQL__NAME: authentik
+      AUTHENTIK_POSTGRESQL__USER: authentik
+      AUTHENTIK_POSTGRESQL__PASSWORD: authentik
+    volumes:
+      - ak-media:/media
+      - ak-templates:/templates
+
+  ak-worker:
+    extends: ak-server
+    command: worker
+    volumes:
+      - ak-media:/media
+      - ak-certs:/certs
+      - ./tls:/certs/test
+      - ak-templates:/templates
+
+volumes:
+  ak-redis:
+  ak-media:
+  ak-certs:
+  ak-templates:

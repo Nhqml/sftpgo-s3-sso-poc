@@ -1,0 +1,38 @@
+include:
+  - utils.compose.yml
+  - authentik.compose.yml
+
+services:
+  sftpgo:
+    image: drakkan/sftpgo
+    volumes:
+      - ./sftpgo-login-banner.txt:/etc/sftpgo/banner.txt:ro
+      - ./tls/wildcard.crt:/etc/ssl/certs/wildcard.crt:ro
+    environment:
+      SSL_CERT_FILE: /etc/ssl/certs/wildcard.crt
+
+      SFTPGO_DATA_PROVIDER__DRIVER: postgresql
+      SFTPGO_DATA_PROVIDER__HOST: "db"
+      SFTPGO_DATA_PROVIDER__PORT: "5432"
+      SFTPGO_DATA_PROVIDER__NAME: "sftpgo"
+      SFTPGO_DATA_PROVIDER__USERNAME: "sftpgo"
+      SFTPGO_DATA_PROVIDER__PASSWORD: "sftpgo"
+
+      SFTPGO_DATA_PROVIDER__CREATE_DEFAULT_ADMIN: "true"
+      SFTPGO_DEFAULT_ADMIN_USERNAME: "Nhqml"
+      SFTPGO_DEFAULT_ADMIN_PASSWORD: "Nhqml"
+
+      SFTPGO_SFTPD__LOGIN_BANNER_FILE: "/etc/sftpgo/banner.txt"
+
+      SFTPGO_HTTPD__BINDINGS__0__ENABLE_WEB_CLIENT: "false"
+      SFTPGO_HTTPD__BINDINGS__0__ENABLED_LOGIN_METHODS: 1 # OIDC for admin
+      #SFTPGO_HTTPD__BINDINGS__0__ENABLED_LOGIN_METHODS: 9 # userpass for client, OIDC for admin
+
+      SFTPGO_HTTPD__BINDINGS__0__OIDC__CLIENT_ID: "ZyQ1krc7TvMoKTrzyn5ehHZbMv0HsgYW49hMtm2U"
+      SFTPGO_HTTPD__BINDINGS__0__OIDC__CLIENT_SECRET: "CxWGy1FodBnGAedzLm9Hzc99pCmBPhpdS3cdtONjtIbqLn1okbR56JXbZ9KOeio6bu3H4bEu5O1SDTNdEyIjLbdzopWemXNXuH8XZXXbXc08u2sOAXP6UYJ4IFlVvuU9"
+      SFTPGO_HTTPD__BINDINGS__0__OIDC__CONFIG_URL: "https://sftpgo-ak-server-1:9443/application/o/sftpgo/"
+      SFTPGO_HTTPD__BINDINGS__0__OIDC__REDIRECT_BASE_URL: "http://sftpgo-sftpgo-1:8080"
+      SFTPGO_HTTPD__BINDINGS__0__OIDC__USERNAME_FIELD: "preferred_username"
+      SFTPGO_HTTPD__BINDINGS__0__OIDC__SCOPES: "openid,profile,email,offline_access,sftpgo"
+      SFTPGO_HTTPD__BINDINGS__0__OIDC__ROLE_FIELD: "sftpgo_role"
+      SFTPGO_HTTPD__BINDINGS__0__OIDC__DEBUG: "true"

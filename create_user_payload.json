@@ -1,0 +1,7 @@
+{
+    "username": "test6",
+    "password": "test6",
+    "status": 1,
+    "groups": [{"name": "SFTP S3 Users", "type": 1}],
+    "permissions": {"/": ["*"]}
+}
